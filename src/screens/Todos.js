@@ -1,26 +1,42 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, FlatList } from 'react-native';
-import { ListItem, CheckBox } from 'react-native-elements';
+import {
+  View,
+  StyleSheet,
+  FlatList,
+  Text,
+  RefreshControl,
+  ScrollView,
+} from 'react-native';
+import { ListItem, CheckBox, Header } from 'react-native-elements';
 
-import API from '../config/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const Todos = (props) => {
+import { API } from '../config/api';
+
+let dataIsReady = false;
+
+const Todos = ({ loggedChecked }) => {
   //Init State
   const [todos, setTodos] = useState([]);
-
+  const [user, setUser] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
   // Create Function to fetch
   const getTodos = async () => {
     try {
       setIsLoading(true);
-      const { data } = await API.get('/Todo');
 
-      if (data) {
+      const { data: userData } = await API.get('/auth/user');
+      const { data } = await API.get(`/Todo?owner=${userData._id}`);
+
+      setUser(userData);
+
+      if (data.length != 0) {
         setTodos(data);
       }
 
       setIsLoading(false);
+      loggedChecked();
     } catch (error) {
       console.log(error);
     }
@@ -31,6 +47,20 @@ const Todos = (props) => {
     //Function Exception
     getTodos();
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      const response = await API.post('/auth/logout');
+
+      if (response) {
+        await AsyncStorage.removeItem('token');
+        loggedChecked();
+      }
+    } catch (error) {
+      console.log(error.response);
+      await AsyncStorage.removeItem('token');
+    }
+  };
 
   //   Create Component List
   const _renderItem = ({ item }) => {
@@ -45,17 +75,41 @@ const Todos = (props) => {
   };
 
   return (
-    <View style={style.container}>
-      <View>
-        <FlatList
-          data={todos}
-          renderItem={_renderItem}
-          keyExtractor={(item) => item._id.toString()}
-          refreshing={isLoading}
-          onRefresh={getTodos}
-        />
-      </View>
-    </View>
+    <>
+      <Header
+        backgroundColor="#9b2226"
+        centerComponent={{
+          text: `Todos: ${user.firstName} ${user.lastName}`,
+          style: { color: '#fff', paddingTop: 3 },
+        }}
+        rightComponent={{
+          icon: 'logout',
+          color: 'black',
+          onPress: handleLogout,
+        }}
+      />
+      {todos.length != 0 ? (
+        <View style={style.container}>
+          <FlatList
+            data={todos}
+            renderItem={_renderItem}
+            keyExtractor={(item) => item._id.toString()}
+            refreshing={isLoading}
+            onRefresh={getTodos}
+          />
+        </View>
+      ) : (
+        <View style={style.noData}>
+          <ScrollView
+            refreshControl={
+              <RefreshControl refreshing={isLoading} onRefresh={getTodos} />
+            }
+          >
+            <Text>No Data</Text>
+          </ScrollView>
+        </View>
+      )}
+    </>
   );
 };
 
@@ -65,5 +119,15 @@ const style = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'column',
+  },
+  noData: {
+    alignItems: 'center',
+  },
+  logout: {
+    color: '#fff',
+    backgroundColor: 'red',
+    paddingLeft: 5,
+    paddingRight: 5,
+    borderRadius: 5,
   },
 });
