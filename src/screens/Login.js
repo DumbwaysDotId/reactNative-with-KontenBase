@@ -16,8 +16,8 @@ export default function Login(props) {
   const { loggedChecked, setIsRegister } = props;
 
   const [form, setForm] = useState({
-    email: 'user@mail.com',
-    password: '123',
+    email: '',
+    password: '',
   });
 
   const handleOnChange = (name, value) => {

@@ -16,10 +16,10 @@ export default function Register(props) {
   const { loggedChecked, setIsRegister } = props;
 
   const [form, setForm] = useState({
-    firstName: 'user',
+    firstName: '',
     lastName: '',
-    email: 'user@mail.com',
-    password: '123',
+    email: '',
+    password: '',
   });
 
   const handleOnChange = (name, value) => {

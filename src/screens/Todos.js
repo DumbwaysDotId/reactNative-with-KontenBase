@@ -13,8 +13,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { API } from '../config/api';
 
-let dataIsReady = false;
-
 const Todos = ({ loggedChecked }) => {
   //Init State
   const [todos, setTodos] = useState([]);
@@ -48,6 +46,7 @@ const Todos = ({ loggedChecked }) => {
     getTodos();
   }, []);
 
+  // Create HandleLogout Function
   const handleLogout = async () => {
     try {
       const response = await API.post('/auth/logout');
